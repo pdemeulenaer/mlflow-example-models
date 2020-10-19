@@ -1,11 +1,11 @@
 # Databricks notebook source
-# # Declaration of input parameter: the environment selected
-# dbutils.widgets.removeAll()
-# dbutils.widgets.dropdown("environment", "TEST", 
-#                          ["TEST", "SYST", "PROD"], "The environment selected for run")
+# Declaration of input parameter: the environment selected
+dbutils.widgets.removeAll()
+dbutils.widgets.dropdown("environment", "TEST", 
+                         ["TEST", "SYST", "PROD"], "The environment selected for run")
 
-# dbutils.widgets.dropdown("evaluate_or_score", "score", 
-#                          ["score", "evaluate"], "The mode of the scoring: simple scoring of unseen data (score) or score on test dataset (evaluate)")
+dbutils.widgets.dropdown("evaluate_or_score", "score", 
+                         ["score", "evaluate"], "The mode of the scoring: simple scoring of unseen data (score) or score on test dataset (evaluate)")
 
 # COMMAND ----------
 
@@ -73,70 +73,11 @@ data_conf, model_conf
 
 # COMMAND ----------
 
-# # -*- coding: utf-8 -*-
-
-# # spark-submit --name simple_app --executor-memory 5G --master yarn --driver-memory 2G --executor-cores 5 --num-executors 3--conf spark.logConf=true simple_app.py 
-
-
-# import os
-# import sys
-# import json
-# import socket
-# import traceback
-# import pandas as pd
-# import numpy as np
-
-# from pyspark.context import SparkContext
-# from pyspark.sql.session import SparkSession
-# from pyspark.sql.window import Window
-# import pyspark.sql.functions as psf
-# import pyspark.sql.types as pst
-
-# from pyspark.ml import Pipeline
-# from pyspark.ml.classification import RandomForestClassifier
-# from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
-# from pyspark.ml.evaluation import MulticlassClassificationEvaluator
-# from sklearn.datasets import load_iris
-
-# spark = SparkSession\
-#     .builder\
-#     .appName("training")\
-#     .enableHiveSupport()\
-#     .getOrCreate()  
-
-# # Detecting the environment
-# def Set_Env():
-#     '''
-#     This function defines the environment on which the code is run, whether it is
-#     TEST, SYST, PROD (based on the host name)
-#     '''
-#     global env
-#     if any(s in str(socket.gethostname()) for s in ("y52951","y52953")):
-#         env = "TEST"
-#     if any(s in str(socket.gethostname()) for s in ("y78389","y75713")):        
-#         env = "SYST"
-#     if "sb-hdppra" in str(socket.gethostname()):
-#         env = "PROD"
-
-#     return env
-        
-# # Set Env
-# Set_Env()   
-
 # Define the environment (dev, test or prod)
 env = dbutils.widgets.getArgument("environment")
 
 print()
 print('Running in ', env)    
-
-# # Reading the configuration files
-# def read_json(filename):
-#     with open(filename, 'r') as stream:
-#         json_dict = json.load(stream)
-#         return json_dict
-
-# model_conf = read_json( os.path.join('config', 'config.json') )
-# data_conf = read_json( os.path.join('config', 'tables.json') )
 
 data_conf = json.loads(data_json)
 model_conf = json.loads(config_json)
@@ -151,6 +92,7 @@ evaluate_or_score = dbutils.widgets.getArgument("evaluate_or_score")
 
 # Define the MLFlow experiment location
 mlflow.set_experiment("/Shared/simple-rf-spark/simple-rf-spark_experiment")
+
 
 # ---------------------------------------------------------------------------------------
 # Main SCORING Entry Point
@@ -179,8 +121,8 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
         data_pd = pd.DataFrame(data=np.column_stack((X,y)), columns=['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'label'])
         data_df = spark.createDataFrame(data_pd)
 
-        if not evaluation: table_in = data_conf[env]['input_to_score'] # for scoring new data
-        if evaluation: table_in = data_conf[env]['input_test'] # for performance evaluation on historical data
+        #if not evaluation: table_in = data_conf[env]['input_to_score'] # for scoring new data
+        #if evaluation: table_in = data_conf[env]['input_test'] # for performance evaluation on historical data
         #data_df = spark.table(table_in)
  
         data_df.show(5)
@@ -219,10 +161,9 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
             '''
             This get the local version of the dbfs path, i.e. replaces "dbfs:" by "/dbfs", for local APIs use.
             '''
-            #os.path.join("/dbfs", dbfs_path.lstrip("dbfs:"))  #why does not work??? 
             return "/dbfs"+dbfs_path.lstrip("dbfs:")  
       
-        mlflow_path = model_dict['source'] #get_local_path_from_dbfs(model_dict['source']) #+ '/tfmodel'       
+        mlflow_path = model_dict['source']       
         print("mlflow_path: ", mlflow_path)        
 
         # De-serialize the model
@@ -325,8 +266,7 @@ if __name__ == "__main__":
         score(data_conf, model_conf, evaluation=False)
     if evaluate_or_score == 'evaluate':
         evaluate(data_conf, model_conf, scoring=True)          
-
-
+        
 
 # COMMAND ----------
 
