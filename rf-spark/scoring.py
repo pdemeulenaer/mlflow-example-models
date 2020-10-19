@@ -85,6 +85,7 @@ model_conf = json.loads(config_json)
 print(data_conf[env])
 print(model_conf)
 
+mlflow_model_name = 'spark-rf' #model_conf['model_name']
 
 # Define the scoring mode
 # evaluate_or_score = str(sys.argv[1])
@@ -139,8 +140,7 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
         # 1.1 Model serving
         # ===================   
         
-        # Load model from MLflow model registry #https://www.mlflow.org/docs/latest/model-registry.html        
-        mlflow_model_name = 'spark-rf' #model_conf['model_name']
+        # Load model from MLflow model registry #https://www.mlflow.org/docs/latest/model-registry.html                
         if env == 'PROD' : 
             mlflow_model_stage = 'Production'
         else:
@@ -212,8 +212,7 @@ def evaluate(data_conf, model_conf, scoring=True, **kwargs):
         # ===========================
         
         # Load model from MLflow model registry #https://www.mlflow.org/docs/latest/model-registry.html        
-        #mlflow_model_name = 'cashflow-poc'
-        if env == 'prod' : 
+        if env == 'PROD' : 
             mlflow_model_stage = 'Production'
         else:
             mlflow_model_stage = 'Staging'
