@@ -34,6 +34,8 @@ from mlflow.tracking.client import MlflowClient
 
 # COMMAND ----------
 
+print('hi')
+
 data_json = '''{
     "TEST": {
         "input_train": "default.iris",
