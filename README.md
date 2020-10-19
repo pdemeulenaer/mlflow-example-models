@@ -1,20 +1,17 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# mlflow-models-examples
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+The purpose of this repo is to explore the tracking and deployment of several machine learning model flavours using the MLFlow platform
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+rf-spark: random forest using pyspark.ml library
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+rf-sklearn random forest using scikit-learn library
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+Each folder follows the same structure:
+
+    training.py: contains a train function which trains a model and saves the model artifact to MLFlow model registry (and MLFlow experiments)
+
+    scoring.py:
+
+        contains a score function which de-serializes the model from the MLFlow model registry
+
+        contains an evaluate function which applies the score function on a (historical) test dataset, builds performance metrics and log them to the MLFlow model registry
