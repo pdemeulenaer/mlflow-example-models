@@ -16,6 +16,12 @@ import socket
 import traceback
 import pandas as pd
 import numpy as np
+from IPython.core.pylabtools import figsize
+from matplotlib import pyplot as plt
+import pylab
+from pylab import *
+import matplotlib.cm as cm
+import matplotlib.mlab as mlab
 
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
@@ -28,6 +34,7 @@ from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.feature import VectorAssembler, StringIndexer, VectorIndexer
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from sklearn.datasets import load_iris
+from sklearn.metrics import accuracy_score, roc_curve, auc, confusion_matrix
 
 import mlflow
 from mlflow.tracking.client import MlflowClient
@@ -111,20 +118,21 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
         # 1.0 Data Loading
         # ==============================
 
-        # USING IRIS DATASET:
-        iris = load_iris()                  #The Iris dataset is available through the scikit-learn API
-        idx = list(range(len(iris.target)))
-        np.random.shuffle(idx)              #We shuffle it (important if we want to split in train and test sets)
-        X = iris.data[idx]
-        y = iris.target[idx]
+#         # USING IRIS DATASET:
+#         iris = load_iris()                  #The Iris dataset is available through the scikit-learn API
+#         idx = list(range(len(iris.target)))
+#         np.random.shuffle(idx)              #We shuffle it (important if we want to split in train and test sets)
+#         X = iris.data[idx]
+#         y = iris.target[idx]
 
-        # Load data in Pandas dataFrame and then in a Pyspark dataframe
-        data_pd = pd.DataFrame(data=np.column_stack((X,y)), columns=['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'label'])
-        data_df = spark.createDataFrame(data_pd)
+#         # Load data in Pandas dataFrame and then in a Pyspark dataframe
+#         data_pd = pd.DataFrame(data=np.column_stack((X,y)), columns=['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'label'])
+#         data_df = spark.createDataFrame(data_pd)
 
         #if not evaluation: table_in = data_conf[env]['input_to_score'] # for scoring new data
         #if evaluation: table_in = data_conf[env]['input_test'] # for performance evaluation on historical data
         #data_df = spark.table(table_in)
+        data_df = spark.read.format("delta").load("/mnt/delta/{0}".format('test_data_spark_rf'))        
  
         data_df.show(5)
         print("Step 1.0 completed: Loaded dataset in Spark")      
@@ -170,7 +178,7 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
         #model = PipelineModel.load("/tmp/rf_model_test")        
         model = mlflow.spark.load_model(mlflow_path)        
         
-        # Make predictions.
+        # Make predictions
         predictions = model.transform(data_df)
 
         # Select example rows to display.
@@ -241,10 +249,37 @@ def evaluate(data_conf, model_conf, scoring=True, **kwargs):
         accuracy = evaluator.evaluate(predictions)
         print("Accuracy = %g" % (accuracy))
         
-        mlflow.log_metric("Accuracy", accuracy)
-
         # Extracting the test set to Pandas
-        #predictions_pd = predictions.toPandas()        
+        pred_pd = predictions.toPandas()          
+        y_test = pred_pd['indexedLabel'].values
+        y_pred = pred_pd['prediction'].values     
+        
+        # Accuracy and Confusion Matrix
+        accuracy = accuracy_score(y_test, y_pred)
+        print('Accuracy = ',accuracy)
+        print('Confusion matrix:')
+        Classes = ['setosa','versicolor','virginica']
+        C = confusion_matrix(y_test, y_pred)
+        C_normalized = C / C.astype(np.float).sum()        
+        C_normalized_pd = pd.DataFrame(C_normalized,columns=Classes,index=Classes)
+        print(C_normalized_pd)
+        
+        #labels = ['business', 'health']
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        cax = ax.matshow(C,cmap='Blues')
+        plt.title('Confusion matrix of the classifier')
+        fig.colorbar(cax)
+        ax.set_xticklabels([''] + Classes)
+        ax.set_yticklabels([''] + Classes)
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.show()
+        fig.savefig('/dbfs/mnt/delta/confusion_matrix_spark_rf.png')
+
+        # Tracking performance metrics
+        mlflow.log_metric("Accuracy", accuracy)
+        mlflow.log_artifact("/dbfs/mnt/delta/confusion_matrix_spark_rf.png")         
 
         print("Step E.2 completed metrics & visualisation")
         print()
