@@ -172,7 +172,7 @@ def train(data_conf, model_conf, **kwargs):
         data_df = spark.createDataFrame(data_pd)
 
         #data_df = spark.table('test.iris')
-        #data_df.show(5)
+        data_df.show(5)
 
         print("Step 1.0 completed: Loaded Iris dataset in Spark")      
 
@@ -201,6 +201,7 @@ def train(data_conf, model_conf, **kwargs):
             # Split the data into training and test sets (30% held out for testing)
             fraction = float(model_conf['hyperparameters']['fraction'])
             (trainingData, testData) = data_df.randomSplit([fraction, 1.-fraction])
+            testData.write.format("delta").mode("overwrite").save("/mnt/delta/{0}".format('test_data_spark_rf'))
 
             # Train a RandomForest model. 
             numTrees = int(model_conf['hyperparameters']['numTrees'])
@@ -240,25 +241,25 @@ if __name__ == "__main__":
 
 # COMMAND ----------
 
-# MAGIC %fs ls dbfs:/tmp/mlflow
+#%fs ls dbfs:/tmp/mlflow
 
 # COMMAND ----------
 
-# MAGIC %fs rm -r dbfs:/rf_model_test/
+#%fs rm -r dbfs:/rf_model_test/
 
 # COMMAND ----------
 
-from pyspark.ml import Pipeline
-from pyspark.ml.classification import LogisticRegression
-from pyspark.ml.feature import HashingTF, Tokenizer
-training = spark.createDataFrame([
-    (0, "a b c d e spark", 1.0),
-    (1, "b d", 0.0),
-    (2, "spark f g h", 1.0),
-    (3, "hadoop mapreduce", 0.0) ], ["id", "text", "label"])
-tokenizer = Tokenizer(inputCol="text", outputCol="words")
-hashingTF = HashingTF(inputCol=tokenizer.getOutputCol(), outputCol="features")
-lr = LogisticRegression(maxIter=10, regParam=0.001)
-pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
-model = pipeline.fit(training)
-mlflow.spark.log_model(model, "spark-model")
+# from pyspark.ml import Pipeline
+# from pyspark.ml.classification import LogisticRegression
+# from pyspark.ml.feature import HashingTF, Tokenizer
+# training = spark.createDataFrame([
+#     (0, "a b c d e spark", 1.0),
+#     (1, "b d", 0.0),
+#     (2, "spark f g h", 1.0),
+#     (3, "hadoop mapreduce", 0.0) ], ["id", "text", "label"])
+# tokenizer = Tokenizer(inputCol="text", outputCol="words")
+# hashingTF = HashingTF(inputCol=tokenizer.getOutputCol(), outputCol="features")
+# lr = LogisticRegression(maxIter=10, regParam=0.001)
+# pipeline = Pipeline(stages=[tokenizer, hashingTF, lr])
+# model = pipeline.fit(training)
+# mlflow.spark.log_model(model, "spark-model")
