@@ -15,3 +15,5 @@ Each folder follows the same structure:
         contains a score function which de-serializes the model from the MLFlow model registry
 
         contains an evaluate function which applies the score function on a (historical) test dataset, builds performance metrics and log them to the MLFlow model registry
+        
+To be continued...        
