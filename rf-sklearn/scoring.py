@@ -1,11 +1,11 @@
 # Databricks notebook source
-# Declaration of input parameter: the environment selected
-dbutils.widgets.removeAll()
-dbutils.widgets.dropdown("environment", "TEST", 
-                         ["TEST", "SYST", "PROD"], "The environment selected for run")
+# # Declaration of input parameter: the environment selected
+# dbutils.widgets.removeAll()
+# dbutils.widgets.dropdown("environment", "TEST", 
+#                          ["TEST", "SYST", "PROD"], "The environment selected for run")
 
-dbutils.widgets.dropdown("evaluate_or_score", "score", 
-                         ["score", "evaluate"], "The mode of the scoring: simple scoring of unseen data (score) or score on test dataset (evaluate)")
+# dbutils.widgets.dropdown("evaluate_or_score", "score", 
+#                          ["score", "evaluate"], "The mode of the scoring: simple scoring of unseen data (score) or score on test dataset (evaluate)")
 
 # COMMAND ----------
 
@@ -116,20 +116,6 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
         # 1.0 Data Loading
         # ==============================
 
-#         # Loading of dataset
-#         iris = load_iris()                  #The Iris dataset is available through the scikit-learn API
-#         idx = list(range(len(iris.target)))
-#         np.random.shuffle(idx)              #We shuffle it (important if we want to split in train and test sets)
-#         X = iris.data[idx]
-#         y = iris.target[idx]
-
-#         # Load data in Pandas dataFrame
-#         data_pd = pd.DataFrame(data=np.column_stack((X,y)), columns=['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'label'])
-#         data_pd.loc[data_pd['label']==0,'species'] = 'setosa'
-#         data_pd.loc[data_pd['label']==1,'species'] = 'versicolor'
-#         data_pd.loc[data_pd['label']==2,'species'] = 'virginica'
-#         data_pd.head()
-        
         #if not evaluation: table_in = data_conf[env]['input_to_score'] # for scoring new data
         #if evaluation: table_in = data_conf[env]['input_test'] # for performance evaluation on historical data
         #data_df = spark.table(table_in)
