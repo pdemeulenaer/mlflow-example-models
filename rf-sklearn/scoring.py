@@ -164,20 +164,22 @@ def score(data_conf, model_conf, evaluation=False, **kwargs):
         print('Model extracted version number: ', model_dict['version'])
         print('Model extracted stage: ', model_dict['current_stage'])                
 
-        def get_local_path_from_dbfs(dbfs_path):
-            '''
-            This get the local version of the dbfs path, i.e. replaces "dbfs:" by "/dbfs", for local APIs use.
-            ''' 
-            return "/dbfs"+dbfs_path.lstrip("dbfs:")  
+#         def get_local_path_from_dbfs(dbfs_path):
+#             '''
+#             This get the local version of the dbfs path, i.e. replaces "dbfs:" by "/dbfs", for local APIs use.
+#             ''' 
+#             return "/dbfs"+dbfs_path.lstrip("dbfs:")  
       
         mlflow_path = model_dict['source']      
         print("mlflow_path: ", mlflow_path)        
 
         # De-serialize the model
-        model = mlflow.sklearn.load_model(mlflow_path)        
+        # model = mlflow.sklearn.load_model(mlflow_path) # works but using the mlflow.sklearn API (not general)
+        model = mlflow.pyfunc.load_model(mlflow_path) # Load model as a PyFuncModel.
         
         # Make predictions
-        y_pred = model.predict(x_test)
+        #y_pred = model.predict(x_test)
+        y_pred = model.predict(pd.DataFrame(x_test)) # when using the PyFuncModel, the input expected is a Pandas df                     
 
         # Saving the result of the scoring
         if not evaluation: table_out = data_conf[env]['output_to_score']
@@ -259,22 +261,22 @@ def evaluate(data_conf, model_conf, scoring=True, **kwargs):
         C_normalized_pd = pd.DataFrame(C_normalized,columns=Classes,index=Classes)
         print(C_normalized_pd)
         
-        #labels = ['business', 'health']
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        cax = ax.matshow(C,cmap='Blues')
-        plt.title('Confusion matrix of the classifier')
-        fig.colorbar(cax)
-        ax.set_xticklabels([''] + Classes)
-        ax.set_yticklabels([''] + Classes)
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
-        plt.show()
-        fig.savefig('/dbfs/mnt/delta/confusion_matrix_sklearn_rf.png')
+#         #labels = ['business', 'health']
+#         fig = plt.figure()
+#         ax = fig.add_subplot(111)
+#         cax = ax.matshow(C,cmap='Blues')
+#         plt.title('Confusion matrix of the classifier')
+#         fig.colorbar(cax)
+#         ax.set_xticklabels([''] + Classes)
+#         ax.set_yticklabels([''] + Classes)
+#         plt.xlabel('Predicted')
+#         plt.ylabel('True')
+#         plt.show()
+#         fig.savefig('/dbfs/mnt/delta/confusion_matrix_sklearn_rf.png')
 
         # Tracking performance metrics
         mlflow.log_metric("Accuracy", accuracy)
-        mlflow.log_artifact("/dbfs/mnt/delta/confusion_matrix_sklearn_rf.png")       
+        #mlflow.log_artifact("/dbfs/mnt/delta/confusion_matrix_sklearn_rf.png")       
 
         print("Step E.2 completed metrics & visualisation")
         print()
@@ -298,3 +300,41 @@ if __name__ == "__main__":
 
 # COMMAND ----------
 
+Running in  TEST
+{'input_train': 'default.iris', 'input_test': 'default.iris_test', 'output_test': 'default.iris_test_scored', 'input_to_score': 'default.iris_to_score', 'output_to_score': 'default.scored'}
+{'hyperparameters': {'max_depth': '20', 'n_estimators': '100', 'max_features': 'auto', 'criterion': 'gini', 'class_weight': 'balanced', 'bootstrap': 'True', 'random_state': '21'}}
+evaluate
+
+-----------------------------------
+         Model Serving             
+-----------------------------------
+
+Step 1.0 completed: Loaded dataset in Spark
+Staging
+Model extracted run_id:  18efd772feec4e32b6af6829148ff099
+Model extracted version number:  2
+Model extracted stage:  Staging
+mlflow_path:  dbfs:/databricks/mlflow-tracking/145810550435566/18efd772feec4e32b6af6829148ff099/artifacts/model
++------+------+
+|y_test|y_pred|
++------+------+
+|   2.0|   2.0|
+|   0.0|   0.0|
+|   0.0|   0.0|
+|   2.0|   2.0|
+|   0.0|   0.0|
++------+------+
+only showing top 5 rows
+
+Step 1.1 completed: model loading, data scoring and writing to hive
+
+Model extracted run_id:  18efd772feec4e32b6af6829148ff099
+Model extracted version number:  2
+Model extracted stage:  Staging
+Accuracy =  0.9333333333333333
+Confusion matrix:
+              setosa  versicolor  virginica
+setosa      0.333333    0.000000   0.000000
+versicolor  0.000000    0.311111   0.022222
+virginica   0.000000    0.044444   0.288889
+Step E.2 completed metrics & visualisation
