@@ -27,6 +27,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.datasets import load_iris
 
 import mlflow
+from mlflow.models.signature import infer_signature
 
 # COMMAND ----------
 
@@ -179,9 +180,11 @@ def train(data_conf, model_conf, **kwargs):
             mlflow.log_param("class_weight", str(class_weight))  
             mlflow.log_param("bootstrap", str(bootstrap))  
             mlflow.log_param("max_features", str(max_features)) 
+            signature = infer_signature(x_train, clf.predict(x_train))
             mlflow.sklearn.log_model(model, 
                                    "model",
-                                   registered_model_name="sklearn-rf")                        
+                                   registered_model_name="sklearn-rf",
+                                   signature=signature)                        
 
         print("Step 1.1 completed: model training and saved to MLFlow")                  
 
